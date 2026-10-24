@@ -1,0 +1,10 @@
+﻿__pycache__/
+*.pyc
+artifacts/
+_models/
+examples_cache/
+hf_space/
+.venv/
+venv/
+*.token
+.env
