@@ -36,6 +36,7 @@ T_OTHER = 0.5        # the picture is "not an auto part" if CLIP puts at least t
 T_VEHICLE = 0.5      # ... or shows a whole vehicle / interior (context, not a part)
 T_MISMATCH = 0.05    # the picture does not match the review if its probability of showing the review's part family is below this
 T_DAMAGE = None     # unvalidated visible-damage cue: counts as a possible defect at or above this score (None = OFF until colab_picture_eval.py shows it is reliable)
+T_PART = 0.40       # the picture is only treated as an auto part when the model puts at least this probability on 'an auto part' (all part classes together)
 T_MATCH = 0.30       # ... and it matches if that probability is at least this (in between: cannot tell)
 
 CSS = """
@@ -132,7 +133,7 @@ def look_at_photo(img, mdl):
             out["shows_name"] = "a package"
     elif r["p_vehicle"] >= T_VEHICLE:
         out["status"] = "vehicle"
-    elif not r.get("named", True):
+    elif not r.get("named", True) or r.get("p_part", 1.0) < T_PART:
         out["status"] = "unclear"
     elif mdl.image is not None:                       # validated condition check: only for factory-style photos of the seven part types it was built on
         out["condition"] = _condition(emb, mdl.image)
@@ -174,7 +175,7 @@ def compare(parts, photo, source="review"):
         return {"state": "match", "note": f"{about} {name}; the picture looks like {shows}"}
     if p < T_MISMATCH:
         return {"state": "mismatch", "note": f"{about} {name}, but the picture looks like {shows}"}
-    return {"state": "cannot", "note": "the picture could be either: not clear enough to compare"}
+    return {"state": "cannot", "note": "the picture does not clearly show that part or a different one"}
 
 
 # ---------------------------------------------------------------- screen 1: one order
@@ -195,7 +196,7 @@ def _first_phrase(row):
     return "" if ev in ("-", "") else ev.split("; ")[0].split(": ", 1)[-1].split("/")[0]
 
 
-def combine(text_priority, p_neg, image_flags, text_issue=""):
+def combine(text_priority, p_neg, image_flags, text_issue="", image_cannot=False):
     """THE COMBINATION RULE.  Text evidence (0 none, 1 medium, 2 high) and picture evidence (0 none, 1 not an auto part, 2 wrong item or defect) -> High / Medium / Low.
     High: the text alone is high priority, OR text and picture both raise a problem, OR a wrong item / defect in the picture comes with an unhappy review.
     Medium: any one signal. Low: none.  Returns (level, [reasons])."""
@@ -212,6 +213,8 @@ def combine(text_priority, p_neg, image_flags, text_issue=""):
         return "High", why
     if t or i:
         return "Medium", why
+    if image_cannot:
+        return "Low", ["Text: no problem found", "Picture: could not be assessed, so it adds no evidence"]
     return "Low", why or ["No problem found in the text or the picture"]
 
 
@@ -246,7 +249,7 @@ def assess_order(text, image, mdl, ordered=""):
         image_flag = "cannot"
     names = _issue_names(row)
     issue = ", ".join(n.lower() for n in names) if names else ""
-    level, why = combine(row["priority_text_only"] if row is not None else "", float(row["p_negative"]) if row is not None else None, flags, issue)
+    level, why = combine(row["priority_text_only"] if row is not None else "", float(row["p_negative"]) if row is not None else None, flags, issue, image_cannot=(image_flag == "cannot"))
     return {"text": text, "ordered": ordered, "image": image, "photo": photo, "row": row, "parts": parts, "ordered_parts": ordered_parts, "match": match, "reco": reco,
             "text_flag": text_flag, "not_part": not_part, "mismatch": mismatch, "damaged": damaged, "image_flag": image_flag, "level": level, "why": why}
 
@@ -273,6 +276,8 @@ def headline(res):
     if bits:
         return "; ".join(bits)
     if reco == "clear":
+        if res.get("image_flag") == "cannot":
+            return "Nothing in the review points to a problem. The picture could not be assessed."
         return "Nothing in the review or the picture points to a problem."
     if res["photo"] is not None and not res["text"]:
         p = res["photo"]

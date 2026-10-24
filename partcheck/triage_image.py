@@ -242,9 +242,10 @@ PHOTO_NON_PART = [
     ("music", "a musical instrument such as a piano, a guitar or sheet music"), ("paper", "a book, a magazine, printed text or a page of sheet music"),
     ("electronics", "a laptop, a television or a home electronics device"), ("jewellery", "jewellery, a watch or a handbag"),
     ("kitchen", "kitchen items, a plate or a cup"), ("plant", "a plant, a flower or a garden"), ("sports", "a bicycle, a ball or sports equipment"),
-    ("art", "a painting, a poster or a drawing"), ("package", "a cardboard box or a shipping package"), ("cosmetics", "cosmetics, skincare or medicine bottles"),
+    ("art", "a painting, a poster or a drawing"), ("package", "a cardboard box or a shipping package"),
+    ("aircraft", "an airplane, an aircraft cockpit or a flight simulator"), ("boat", "a boat, a ship, a train or a bus"), ("screen", "a computer screen, a video game or a television screen"), ("cosmetics", "cosmetics, skincare or medicine bottles"),
 ]
-PHOTO_OTHER_EXTRA = {"package": "a package or box", "music": "a musical instrument or sheet music", "paper": "a book or printed page", "electronics": "home electronics", "jewellery": "jewellery or a bag",
+PHOTO_OTHER_EXTRA = {"package": "a package or box", "aircraft": "an aircraft or a cockpit", "boat": "a boat, ship or train", "screen": "a screen", "music": "a musical instrument or sheet music", "paper": "a book or printed page", "electronics": "home electronics", "jewellery": "jewellery or a bag",
                      "kitchen": "kitchen items", "plant": "a plant", "sports": "sports equipment", "art": "a painting or poster", "cosmetics": "cosmetics or medicine"}
 T_NAME = 0.30       # the picture is only given a part name when that part holds at least this share of the "which part" probability; otherwise "could not identify a part"
 PHOTO_VEHICLE = [("vehicle", "a whole car or truck"), ("vehicle", "the inside of a car or a dashboard"), ("vehicle", "a motorcycle or an atv")]
