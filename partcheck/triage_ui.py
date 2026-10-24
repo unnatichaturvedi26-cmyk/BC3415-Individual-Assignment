@@ -36,7 +36,7 @@ T_OTHER = 0.5        # the picture is "not an auto part" if CLIP puts at least t
 T_VEHICLE = 0.5      # ... or shows a whole vehicle / interior (context, not a part)
 T_MISMATCH = 0.05    # the picture does not match the review if its probability of showing the review's part family is below this
 T_DAMAGE = None     # unvalidated visible-damage cue: counts as a possible defect at or above this score (None = OFF until colab_picture_eval.py shows it is reliable)
-T_PART = 0.40       # the picture is only treated as an auto part when the model puts at least this probability on 'an auto part' (all part classes together)
+T_PART = 0.50       # below this probability on 'an auto part' (all part classes together) the picture is treated as NOT an auto part
 T_MATCH = 0.30       # ... and it matches if that probability is at least this (in between: cannot tell)
 
 CSS = """
@@ -127,13 +127,13 @@ def look_at_photo(img, mdl):
     fam = max(r["families"], key=r["families"].get) if r["families"] else None
     out = {"status": "part", "shows": r["top"], "shows_name": ti.PHOTO_NAME[r["top"]], "family": fam, "families": r["families"],
            "other_name": ti.PHOTO_OTHER_NAME.get(r["other_top"], "something else"), "p_other": r["p_other"], "condition": None, "damage_score": None}
-    if r["p_other"] >= T_OTHER:
+    if r["p_other"] >= T_OTHER or (r["p_part"] < T_PART and r["p_vehicle"] < T_VEHICLE):
         out["status"] = "package" if r["other_top"] == "package" else "other"
         if out["status"] == "package":
             out["shows_name"] = "a package"
     elif r["p_vehicle"] >= T_VEHICLE:
         out["status"] = "vehicle"
-    elif not r.get("named", True) or r.get("p_part", 1.0) < T_PART:
+    elif not r.get("named", True):
         out["status"] = "unclear"
     elif mdl.image is not None:                       # validated condition check: only for factory-style photos of the seven part types it was built on
         out["condition"] = _condition(emb, mdl.image)
@@ -373,7 +373,7 @@ def render_order(res):
     comb = _panel("3. Combined decision", [("Priority", lvl, "")] + [("Based on" if i == 0 else "", w, "") for i, w in enumerate(res["why"])], cls="pc-comb " + lvl.lower())
     return (f"<div class='pc-card'>{head}<div class='pc-grid'>{rev}{pic}{comb}</div>"
             f"<div class='pc-next'><b>Next action:</b> {esc(next_action(res))}</div>"
-            f"<div class='pc-note'>The two signals are combined by a fixed rule (see <code>combine</code> in <code>triage_ui.py</code>). A person decides what happens next; this app does not send messages or issue refunds.</div></div>")
+            f"<div class='pc-note'>A person decides what happens next. This app does not send messages or issue refunds.</div></div>")
 
 
 # ---------------------------------------------------------------- screen 2: many reviews

@@ -1,4 +1,4 @@
-"""Logic tests for PartCheck (no GPU, no neural models): stand-in models with scripted pictures.
+﻿"""Logic tests for PartCheck (no GPU, no neural models): stand-in models with scripted pictures.
 A solid-colour picture stands for a scenario:  red = a tyre, blue = a bottle of oil, yellow = floor mats, green = food (a random picture),
 grey = a whole vehicle, orange = a damaged seat cover (factory-style), purple = a picture that could be either (unclear).
 Run:  python tests/test_partcheck.py
@@ -17,6 +17,7 @@ import pandas as pd
 from PIL import Image
 
 import triage_core as tc
+import triage_image as ti
 import triage_engine as te
 import triage_ui as ui
 
@@ -222,7 +223,16 @@ check("part list: bare 'blades' is read as wiper blades", [p["key"] for p in tc.
 for im in (RED, TEAL, BROWN, GREEN):
     check(f"HTML is well formed for the three-part card (picture {im})", balanced(ui.render_order(ui.assess_order("The motor oil leaked.", solid(im), M))))
 
+print("\n== 6. CONSISTENCY OF THE PICTURE CLASSES ==")
+keys_in_lexicon = {p[0] for p in tc.PARTS}
+check("every picture class has a family", all(c[0] in ti.PHOTO_FAMILY for c in ti.PHOTO_CLASSES), str([c[0] for c in ti.PHOTO_CLASSES if c[0] not in ti.PHOTO_FAMILY]))
+check("every lexicon key a picture class refers to exists in the part list", all(k in keys_in_lexicon for c in ti.PHOTO_CLASSES for k in c[3]), str({k for c in ti.PHOTO_CLASSES for k in c[3] if k not in keys_in_lexicon}))
+check("every non-part class has a display name", all(k in ti.PHOTO_OTHER_NAME for k, _ in ti.PHOTO_NON_PART), str([k for k, _ in ti.PHOTO_NON_PART if k not in ti.PHOTO_OTHER_NAME]))
+check("a steering wheel review names the part and the picture classes can show it", [p["key"] for p in tc.mentioned_parts("The steering wheel feels great")] == ["steering_wheel"] and "steering" in ti.PHOTO_FOR_KEYS["steering_wheel"])
+check("wiper blades (exterior) and a steering wheel (interior) are different families", ti.PHOTO_FAMILY["steering"] != ti.PHOTO_FAMILY["wiper"])
+
 print(f"\n{PASSES} passed, {len(FAILS)} failed")
 if FAILS:
     print("FAILED:", *FAILS, sep="\n  - ")
     sys.exit(1)
+

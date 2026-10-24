@@ -225,12 +225,14 @@ PHOTO_CLASSES = [
     ("mirror", "mirrors", ["a car side mirror", "a rear view mirror"], ["mirrors"]),
     ("emblem", "emblems & plate frames", ["a car emblem or decal", "a license plate frame", "a car sticker"], ["emblems"]),
     ("rack", "racks & hitches", ["a roof rack", "a trailer hitch", "a tow hook or tow strap"], ["racks_hitches"]),
-    ("exterior", "bumpers & exterior trim", ["a car bumper", "a running board", "fender flares", "a car cover"],
+    ("exterior", "bumpers & exterior trim", ["a car bumper", "a running board", "fender flares", "a car cover", "a car grille"],
      ["running_boards", "trim", "bed_liner", "car_cover"]),
     ("suspension", "suspension parts", ["a control arm", "a shock absorber", "a ball joint"], ["suspension"]),
     ("engine", "engine parts", ["a car radiator", "a water pump", "an engine gasket", "an exhaust pipe", "a fuel pump"],
      ["cooling", "gaskets", "fuel_system", "exhaust", "drivetrain"]),
     ("lock", "locks & key fobs", ["a car key fob", "a door handle or lock"], ["locks_fobs"]),
+    ("steering", "steering wheels", ["a car steering wheel", "a racing steering wheel", "a steering wheel with buttons"], ["steering_wheel", "steering_cover"]),
+    ("audio", "car audio", ["a car stereo head unit", "a car speaker or subwoofer", "a car amplifier"], ["audio"]),
     ("interior", "interior accessories", ["a car cup holder", "a car seat back organizer", "a gear shift knob", "a dashboard cover"],
      ["organizers", "shifter_pedals", "dash_cover"]),
 ]
@@ -243,9 +245,10 @@ PHOTO_NON_PART = [
     ("electronics", "a laptop, a television or a home electronics device"), ("jewellery", "jewellery, a watch or a handbag"),
     ("kitchen", "kitchen items, a plate or a cup"), ("plant", "a plant, a flower or a garden"), ("sports", "a bicycle, a ball or sports equipment"),
     ("art", "a painting, a poster or a drawing"), ("package", "a cardboard box or a shipping package"),
+    ("sign", "a company logo, a sign or large lettering on a wall"), ("office", "an office, an airport or the inside of a building"),
     ("aircraft", "an airplane, an aircraft cockpit or a flight simulator"), ("boat", "a boat, a ship, a train or a bus"), ("screen", "a computer screen, a video game or a television screen"), ("cosmetics", "cosmetics, skincare or medicine bottles"),
 ]
-PHOTO_OTHER_EXTRA = {"package": "a package or box", "aircraft": "an aircraft or a cockpit", "boat": "a boat, ship or train", "screen": "a screen", "music": "a musical instrument or sheet music", "paper": "a book or printed page", "electronics": "home electronics", "jewellery": "jewellery or a bag",
+PHOTO_OTHER_EXTRA = {"package": "a package or box", "aircraft": "an aircraft or a cockpit", "sign": "a logo or a sign", "office": "a building interior", "boat": "a boat, ship or train", "screen": "a screen", "music": "a musical instrument or sheet music", "paper": "a book or printed page", "electronics": "home electronics", "jewellery": "jewellery or a bag",
                      "kitchen": "kitchen items", "plant": "a plant", "sports": "sports equipment", "art": "a painting or poster", "cosmetics": "cosmetics or medicine"}
 T_NAME = 0.30       # the picture is only given a part name when that part holds at least this share of the "which part" probability; otherwise "could not identify a part"
 PHOTO_VEHICLE = [("vehicle", "a whole car or truck"), ("vehicle", "the inside of a car or a dashboard"), ("vehicle", "a motorcycle or an atv")]
@@ -257,7 +260,7 @@ PHOTO_OTHER_NAME = {"person": "a person", "animal": "an animal", "food": "food o
 PHOTO_OTHER_NAME.update(PHOTO_OTHER_EXTRA)
 # Fine part classes are easy to confuse on real customer photos (a tyre photo vs a wheel photo), so the match check works on broad FAMILIES.
 PHOTO_FAMILY = {"tire": "wheels", "wheel": "wheels", "light": "lights", "wiper": "exterior", "mirror": "exterior", "emblem": "exterior", "rack": "exterior",
-                "exterior": "exterior", "sunshade": "interior", "floor_mat": "interior", "seat_cover": "interior", "interior": "interior", "bottle": "fluids",
+                "exterior": "exterior", "sunshade": "interior", "floor_mat": "interior", "seat_cover": "interior", "interior": "interior", "steering": "interior", "audio": "electrical", "bottle": "fluids",
                 "battery": "electrical", "cable": "electrical", "gadget": "electrical", "plug": "electrical", "tools": "tools", "fastener": "tools",
                 "brake": "mechanical", "filter": "mechanical", "hose_belt": "mechanical", "suspension": "mechanical", "engine": "mechanical", "lock": "mechanical"}
 FAMILY_NAME = {"wheels": "tyres & wheels", "lights": "lights", "exterior": "exterior accessories", "interior": "interior accessories", "fluids": "bottles & fluids",
