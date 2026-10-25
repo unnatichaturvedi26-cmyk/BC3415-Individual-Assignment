@@ -341,7 +341,10 @@ def next_action(res):
 
 
 def _panel(title, rows, extra="", cls=""):
-    body = "".join((f"<div class='pc-k'>{esc(k)}</div>" if k else "") + f"<div class='pc-v'>{esc(v)}</div>" + (f"<div class='pc-n'>{esc(n)}</div>" if n else "") for k, v, n in rows)
+    def value(v):
+        text, tone = v if isinstance(v, tuple) else (v, "")
+        return f"<div class='pc-v {tone}'>{esc(text)}</div>"
+    body = "".join((f"<div class='pc-k'>{esc(k)}</div>" if k else "") + value(v) + (f"<div class='pc-n'>{esc(n)}</div>" if n else "") for k, v, n in rows)
     return f"<div class='pc-panel {cls}'>{extra}<div class='pc-ph'>{esc(title)}</div>{body}</div>"
 
 
@@ -383,10 +386,12 @@ def render_order(res):
         else:
             cond = photo["condition"]
             rows.append(("Shows", photo["shows_name"].capitalize(), "an auto part"))
-            rows.append(("Condition", {"possible defect": "Possible defect", "no defect found": "No defect found"}.get(cond, "Not assessed"), ""))
+            if cond or not res["text"]:                    # with a review, show it only when the damage check ran; picture-only orders always show it
+                rows.append(("Condition", {"possible defect": "Possible defect", "no defect found": "No defect found"}.get(cond, "Not assessed"), ""))
         if match is not None and st in ("part", "unclear", "package"):
             state = {"match": "Match", "mismatch": "Do not match", "cannot": "Needs product reference"}[match["state"]]
-            rows.append(("Order vs picture" if res.get("ordered_parts") else "Review vs picture", state, match["note"]))
+            tone = {"match": "tone-ok", "mismatch": "tone-bad", "cannot": "tone-warn"}[match["state"]]
+            rows.append(("Order vs picture" if res.get("ordered_parts") else "Review vs picture", (state, tone), match["note"]))
         if res["image_flag"] == "defect" and photo.get("condition") != "possible defect":
             rows[0] = ("Image flag", IMAGE_FLAG["defect"], "unvalidated cue: the picture resembles damaged parts or packaging")
         pic = _panel("Image signal", rows, thumb)
@@ -394,7 +399,7 @@ def render_order(res):
     lvl = res["level"]
     explanation = {"High": "Escalate this order now. The review is strongly negative, or the review and the picture both point to a problem.",
                    "Medium": "Check this order. One signal points to a problem.",
-                   "Low": "Routine. Neither the review nor the picture shows a problem. Unverified picture checks do not prove the item is in good condition."}[lvl]
+                   "Low": "Routine. Neither the review nor the picture shows a problem."}[lvl]
     comb = _panel("Decision", [("Priority", lvl, explanation)] + [("Evidence" if i == 0 else "", w, "") for i, w in enumerate(res["why"])], cls="pc-comb " + lvl.lower())
     checked_by_rule = photo is not None and photo["status"] == "part" and res["photo"].get("condition") is None
     footnote = "<div class='pc-note'>Damage checks cover 7 part types only.</div>" if checked_by_rule else ""
@@ -624,6 +629,8 @@ CSS += """
 .pc-n{font-size:14px;color:#5b6370;line-height:1.4;margin-top:2px}
 .pc-comb .pc-v{font-size:24px;font-weight:700}
 .pc-comb.high .pc-v{color:#9b2c1d}.pc-comb.medium .pc-v{color:#8a5a00}.pc-comb.low .pc-v{color:#1f6b52}
+.pc-v.tone-ok{color:#1f6b52}.pc-v.tone-bad{color:#9b2c1d}.pc-v.tone-warn{color:#8a5a00}
+.pc-comb{margin-top:18px}
 .pc-grid{gap:14px}.pc-rv{font-size:26px}.pc-rs{font-size:17px}.pc-next{font-size:16px}.pc-note{font-size:14px;color:#5b6370}
 .pc-banner{border-radius:11px;padding:13px 17px}.pc-row{margin:10px 0}.pc-row summary{padding:16px}
 .pill,.chip{border-radius:8px}.pc-next{margin-top:18px;padding-top:18px}
