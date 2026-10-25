@@ -208,7 +208,7 @@ PARTS = [
     ("motor_oil", "Motor oil", "Oils & fluids", r"motor oil|engine oil|oil change|synthetic oil|oil"),
     ("rv", "RV / trailer parts", "RV parts & accessories", r"awnings?|leveling blocks?|levelers?|slide-?outs?|sewer hoses?|rv (?:parts?|hoses?|batter(?:y|ies)|covers?|water filters?)"),
     ("motorcycle", "Motorcycle / powersports parts", "Motorcycle & powersports", r"helmets?|handlebars?|saddle ?bags?|sprockets?|fairings?|motorcycle (?:covers?|chains?|mirrors?|parts?|batter(?:y|ies))|atv (?:parts?|winch(?:es)?|plows?)"),
-    ("performance", "Performance parts", "Performance parts", r"cold air intakes?|intakes?|tuners?|superchargers?|spoilers?|performance"),
+    ("performance", "Performance parts", "Performance parts", r"cold air intakes?|intakes?|tuners?|superchargers?|spoilers?|performance (?:parts?|upgrades?|kits?|exhausts?|brakes?|tires?|chips?)"),   # bare "performance" is praise, not a part
 ]
 _PARTS_COMPILED = [(k, n, g, re.compile(r"\b(?:" + p + r")\b", flags=re.I)) for k, n, g, p in PARTS]
 

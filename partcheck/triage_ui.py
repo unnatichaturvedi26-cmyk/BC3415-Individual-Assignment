@@ -649,17 +649,17 @@ CSS += """
 .pc-ph{font-size:17px;font-weight:700;color:#0f1a2b;margin:0 0 10px 0;padding-left:10px;border-left:4px solid #0f1a2b;line-height:1.3}
 .pc-comb.high .pc-ph{border-left-color:#9b2c1d}.pc-comb.medium .pc-ph{border-left-color:#c98a1b}.pc-comb.low .pc-ph{border-left-color:#1f6b52}
 .pc-ph + .pc-line{border-top:0}
-.pc-line{display:grid;grid-template-columns:36% 1fr;gap:12px;padding:10px 0;border-top:1px solid #eceef2;align-items:start}
-.pc-k{font-size:14px;font-weight:500;color:#5b6370;padding-top:2px}
-.pc-v.pill-high{display:inline-block;background:#f6e1dc;color:#7d2317;padding:3px 12px;border-radius:999px;font-size:16px}
-.pc-v.pill-medium{display:inline-block;background:#f8eddb;color:#7a4e06;padding:3px 12px;border-radius:999px;font-size:16px}
-.pc-v.pill-low{display:inline-block;background:#dff1ea;color:#1d5c46;padding:3px 12px;border-radius:999px;font-size:16px}
+.pc-line{padding:13px 0;border-top:1px solid #eceef2}
+.pc-k{font-size:13px;font-weight:600;color:#6b7380;margin-bottom:4px;letter-spacing:.02em}
+.pc-v.pill-high{display:inline-block;background:#f6e1dc;color:#7d2317;padding:6px 16px;border-radius:999px;font-size:20px}
+.pc-v.pill-medium{display:inline-block;background:#f8eddb;color:#7a4e06;padding:6px 16px;border-radius:999px;font-size:20px}
+.pc-v.pill-low{display:inline-block;background:#dff1ea;color:#1d5c46;padding:6px 16px;border-radius:999px;font-size:20px}
 .pc-comb.high,.pc-comb.medium,.pc-comb.low{background:#fff}
-.pc-v{font-size:16px;font-weight:600;color:#0f1a2b;line-height:1.35}
+.pc-v{font-size:18px;font-weight:600;color:#0f1a2b;line-height:1.35}
 .pc-n{font-size:13px;color:#5b6370;line-height:1.45;margin-top:3px}
 .pc-v.tone-ok{color:#1f6b52}.pc-v.tone-bad{color:#9b2c1d}.pc-v.tone-neutral{color:#4a5260}
 .pc-comb{margin-top:18px}
-.pc-grid{gap:14px}.pc-rv{font-size:26px}.pc-rs{font-size:17px}.pc-next{font-size:16px}.pc-note{font-size:14px;color:#5b6370}
+.pc-grid{gap:18px}.pc-rv{font-size:26px}.pc-rs{font-size:17px}.pc-next{font-size:17px;background:#f4f6f8;border-radius:10px;padding:14px 16px;margin-top:18px;border-top:0}.pc-note{font-size:14px;color:#5b6370}
 .pc-banner{border-radius:11px;padding:13px 17px}.pc-row{margin:10px 0}.pc-row summary{padding:16px}
 .pill,.chip{border-radius:8px}.pc-next{margin-top:18px;padding-top:18px}
 [data-testid='stFileUploader'] section{border-radius:13px;background:#fff;border-color:#dedee2}
