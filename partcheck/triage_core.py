@@ -22,7 +22,7 @@ PATTERNS_V1 = {
 
 # ---------------- v2 keyword rules: v1 plus extra phrasings ----------------
 _V2_EXTRA = {
-    "damaged_defective": r"glitch(?:es|y)?|interrupted|dead|failed|dies|no sound|won['’]?t (?:turn on|charge|work)|(?:doesn['’]?t|does not|didn['’]?t|did not|won['’]?t|will not|can['’]?t|cannot) (?:\w+ ){0,2}(?:turn|power|switch|start|charge|connect|pair|boot)\b|(?:never|didn['’]?t|did not|doesn['’]?t|does not|wouldn['’]?t|would not|not) (?:\w+ ){0,2}work(?:ed|s)?\b|poor(?:ly)? (?:quality|made|built)|(?:cheap(?:ly)?|flimsy) (?:made|material|plastic|quality|feeling)|not (?:very )?durable|burn(?:ed|t) out|snapped|corro\w+|rust(?:ed)?|flicker\w*|hyper ?flash\w*|peel(?:ed|ing)|fell off|falls off|came loose|came off|shut down|warped|barely works|did(?:n['’]?t| not) do what|keeps? (?:popping|falling|slipping|coming) (?:off|out)|coming out of|break(?:s)? (?:away|off)|stretched out|missing (?:\\w+ ){0,2}(?:hardware|posts?|bolts?|screws?|gaskets?)",
+    "damaged_defective": r"glitch(?:es|y)?|interrupted|dead|failed|dies|no sound|won['’]?t (?:turn on|charge|work)|(?:doesn['’]?t|does not|didn['’]?t|did not|won['’]?t|will not|can['’]?t|cannot) (?:\w+ ){0,2}(?:turn|power|switch|start|charge|connect|pair|boot)\b|(?:never|didn['’]?t|did not|doesn['’]?t|does not|wouldn['’]?t|would not|not) (?:\w+ ){0,2}work(?:ed|s)?\b|poor(?:ly)? (?:quality|made|built)|(?:cheap(?:ly)?|flimsy) (?:made|material|plastic|quality|feeling)|not (?:very )?durable|burn(?:ed|t) out|snapped|corro\w+|rust(?:ed)?|flicker\w*|hyper ?flash\w*|peel(?:ed|ing)|fell off|falls off|came loose|came off|shut down|warped|barely works|did(?:n['’]?t| not) do what|keeps? (?:popping|falling|slipping|coming) (?:off|out)|coming out of|break(?:s)? (?:away|off)|stretched out|missing (?:\w+ ){0,2}(?:hardware|posts?|bolts?|screws?|gaskets?)",
     "wrong_item": r"(?:shipped|sent|send) (?:me )?(?:the )?wrong|received (?:a |an )?(?:different|wrong)",
     "not_as_described": r"contrary to|isn['’]?t as (?:pictured|described|advertised)|not as listed|different from what|not (?:what|as) (?:i |we |you |was |it was |they )?(?:expected|promised)|(?:ugly|wrong|different|dull|faded) (?:\w+ )?colou?r|looks? (?:nothing like|completely different|very different)|(?:description|listing|ad|seller) (?:said|claimed|indicated|stated)|(?:said|claimed|stated|advertised|told) (?:it )?(?:would|will|to) (?:fit|work)|not (?:what )?(?:was )?(?:advertised|described)|(?:picture|photo|image) shows|received (?:a |an )?used|unit (?:i )?received was used|(?:much )?lighter than",
     "size_fit": r"(?:smaller|bigger|larger|tighter|looser) than (?:i|we|you|expected|described|pictured|advertised|the (?:photo|picture|listing))|(?:can['’]?t|cannot|could not|couldn['’]?t) (?:wear|fit|put (?:it )?on)|not (?:a )?(?:direct |proper |correct )?fit|not compatible|incompatible|(?:will not|won['’]?t|would not|wouldn['’]?t|does not|doesn['’]?t|did not|didn['’]?t) (?:work|fit) (?:with|on|in)|wrong (?:part|model)|no fit guide|fit(?:ment)? (?:was |is )?(?:not|isn['’]?t|wasn['’]?t) (?:good|accurate|correct|right)|(?:won['’]?t|would not|wouldn['’]?t|cannot|can['’]?t) fit|not fit",
@@ -213,9 +213,13 @@ PARTS = [
 _PARTS_COMPILED = [(k, n, g, re.compile(r"\b(?:" + p + r")\b", flags=re.I)) for k, n, g, p in PARTS]
 
 
+# Ordinary phrases that contain a part word but are not about a part ("went nuts", "lightweight"). They are blanked out before the part lexicon runs.
+_IDIOMS = re.compile(r"\b(?:(?:go|goes|going|gone|went|drive|drives|driving|drove|driven)\s+(?:me\s+)?(?:nuts|crazy)|light[- ]?weight|light[- ]duty|(?:a |the )?starter (?:kit|set|pack)|for (?:a |the )?starter)\b", re.I)
+
+
 def mentioned_parts(text, n=3):
     """Parts a review talks about, in the order they first appear: [{'key', 'name', 'group', 'phrase'}]. Empty list = no part named."""
-    t = clean(text)
+    t = _IDIOMS.sub(" ", clean(text))
     claimed, found = [], []
     for k, name, grp, rx in _PARTS_COMPILED:
         for m in rx.finditer(t):
