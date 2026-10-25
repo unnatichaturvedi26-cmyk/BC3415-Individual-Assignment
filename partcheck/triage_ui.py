@@ -202,6 +202,9 @@ def compare(parts, photo, source="review"):
 # ---------------------------------------------------------------- screen 1: one order
 RECO = {"flag": ("Review recommended", "!"), "clear": ("No issue detected", "✓"), "unknown": ("Unable to assess", "?")}
 IMAGE_FLAG = {"wrong_item": "Picture does not match", "defect": "Possible defect", "not_part": "Not an auto part", "ok": "No problem found", "cannot": "Could not decide", "identified": "Part found, condition not checked"}
+ISSUE_SENTENCE = {"damaged_defective": "The review reports damage or a defect", "wrong_item": "The review says the wrong item arrived",
+                  "not_as_described": "The review says the item is not as described", "size_fit": "The review reports a fit or size problem",
+                  "delivery_shipping": "The review reports a delivery problem", "customer_service": "The review reports a customer service problem"}
 
 
 def _issue_names(row):
@@ -225,8 +228,8 @@ def combine(text_priority, p_neg, image_flags, text_issue="", image_cannot=False
     i = 2 if ("wrong_item" in image_flags or "defect" in image_flags) else (1 if "not_part" in image_flags else 0)
     why = []
     if t:
-        why.append(f"Text: {text_issue or 'negative review'}")
-    for f, msg in (("wrong_item", "Picture: shows a different part from the one the order or review is about"), ("defect", "Picture: possible visible damage or defect"),
+        why.append(f"Review: complains about {text_issue}" if text_issue else "Review: negative, with no specific problem named")
+    for f, msg in (("wrong_item", "Picture: shows a different part from the one ordered or named in the review"), ("defect", "Picture: possible visible damage or defect"),
                    ("not_part", "Picture: not an auto part")):
         if f in image_flags:
             why.append(msg)
@@ -235,8 +238,8 @@ def combine(text_priority, p_neg, image_flags, text_issue="", image_cannot=False
     if t or i:
         return "Medium", why
     if image_cannot:
-        return "Low", ["Text: no problem found", "Picture: part identified, but condition or order match is not verified"]
-    return "Low", why or ["No problem found in the text or the picture"]
+        return "Low", ["Review: no problem found", "Picture: part found, but its condition and match were not verified"]
+    return "Low", why or ["Review and picture show no problem"]
 
 
 def assess_order(text, image, mdl, ordered=""):
@@ -282,14 +285,12 @@ def headline(res):
     reco, row = res["reco"], res["row"]
     bits = []
     if res["text_flag"] and row is not None:
-        names = _issue_names(row)
+        keys = _split(row["confirmed"])
         part = (" with " + res["parts"][0]["name"].lower()) if res["parts"] else ""
-        if len(names) == 1:
-            bits.append(f"Possible {names[0].lower()} problem{part}")
-        elif names:
-            bits.append("Possible problems: " + ", ".join(n.lower() for n in names) + part)
+        if keys:
+            bits.extend(ISSUE_SENTENCE.get(k, "The review reports a problem") + part for k in keys[:2])
         else:
-            bits.append("Negative review with no specific problem named")
+            bits.append("The review is negative, but it names no specific problem")
     if res["not_part"]:
         bits.append(f"The picture is not an auto part (it looks like {res['photo']['other_name']})")
     if res["mismatch"]:
@@ -357,8 +358,9 @@ def render_order(res):
         poss = _split(row["possible"])
         rev = _panel("Text signal", [("Sentiment", f"{SENT.get(row['sentiment'], row['sentiment'])}", f"{row['p_negative']:.0%} chance the customer is unhappy"),
                                         ("Issue", ", ".join(names) if names else "No specific issue detected",
-                                         (f"phrase in the review: “{_first_phrase(row)}”" + ("" if res["text_flag"] else ". Not escalated: the review is not negative overall")) if names and _first_phrase(row) else ("unconfirmed model guess: " + ", ".join(LABEL.get(k, k).lower() for k in poss) if poss else "")),
-                                        ("Part named", ", ".join(p["name"] for p in parts[:2]) if parts else "No specific part named", "")])
+                                         (f"phrase in the review: “{_first_phrase(row)}”" + ("" if res["text_flag"] else ". This is not escalated, because the review is not negative overall")) if names and _first_phrase(row) else ("unconfirmed model guess: " + ", ".join(LABEL.get(k, k).lower() for k in poss) if poss else "")),
+                                        ("Part named", ", ".join(p["name"] for p in (res["ordered_parts"] or parts)[:2]) or "No specific part named",
+                                         "from the product ordered" if res["ordered_parts"] else "")])
     else:
         rev = ""
     # 2. image signal (its own flag)
@@ -390,14 +392,14 @@ def render_order(res):
         pic = _panel("Image signal", rows, thumb)
     # 3. combined decision
     lvl = res["level"]
-    explanation = {"High": "Escalate: strong text evidence or multiple independent warning signals.",
-                   "Medium": "Review: at least one text or picture signal warrants attention.",
-                   "Low": "Routine. No confirmed warning signal was found. Unverified image checks do not prove that the item is in good condition."}[lvl]
+    explanation = {"High": "Escalate this order now. The review is strongly negative, or the review and the picture both point to a problem.",
+                   "Medium": "Check this order. One signal points to a problem.",
+                   "Low": "Routine. Neither the review nor the picture shows a problem. Unverified picture checks do not prove the item is in good condition."}[lvl]
     comb = _panel("Decision", [("Priority", lvl, explanation)] + [("Evidence" if i == 0 else "", w, "") for i, w in enumerate(res["why"])], cls="pc-comb " + lvl.lower())
     checked_by_rule = photo is not None and photo["status"] == "part" and res["photo"].get("condition") is None
     footnote = "<div class='pc-note'>Damage checks cover 7 part types only.</div>" if checked_by_rule else ""
     signals = f"<div class='pc-grid'>{rev}{pic}</div>" if (rev or pic) else ""
-    return (f"<div class='pc-card'>{head}{comb}{signals}"
+    return (f"<div class='pc-card'>{head}{signals}{comb}"
             f"<div class='pc-next'><b>Next action:</b> {esc(next_action(res))}</div>{footnote}"
             f"<div class='pc-note'>A person decides what happens next. This app does not send messages or issue refunds.</div></div>")
 
@@ -616,7 +618,7 @@ CSS += """
 .pc-card{padding:23px}.pc-panel{padding:18px}.pc-kpi{padding:22px}.pc-kpi .n{font-size:32px;letter-spacing:-.045em}
 .pc-h2{font-size:27px;font-weight:650;letter-spacing:-.045em;margin:11px 0 8px}.pc-sub{font-size:15px;color:#77777b}
 .pc-reco{border-radius:13px;border-left:0;padding:19px;margin-bottom:20px}.pc-ico{border-radius:50%}
-.pc-ph{font-size:12px;letter-spacing:.035em}.pc-v{font-size:15px}.pc-grid{gap:14px}
+.pc-ph{font-size:16px;font-weight:700;letter-spacing:.01em;color:#2b3440}.pc-k{font-size:15px;color:#4a5260}.pc-v{font-size:20px;font-weight:650;color:#0f1a2b;line-height:1.25}.pc-n{font-size:15px;color:#4a5260;line-height:1.4}.pc-grid{gap:14px}.pc-rv{font-size:26px}.pc-rs{font-size:17px}.pc-next{font-size:17px}.pc-note{font-size:14px;color:#4a5260}
 .pc-banner{border-radius:11px;padding:13px 17px}.pc-row{margin:10px 0}.pc-row summary{padding:16px}
 .pill,.chip{border-radius:8px}.pc-next{margin-top:18px;padding-top:18px}
 [data-testid='stFileUploader'] section{border-radius:13px;background:#fff;border-color:#dedee2}
