@@ -712,4 +712,51 @@ CSS += """
 .pc-note{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
 .pc-empty{background:#fff;border:1px dashed #cfd6de;border-radius:12px;padding:28px;color:var(--muted);text-align:center;font-size:15px}
 @media(max-width:760px){.stApp .block-container{padding:18px 16px 48px}.pc-grid{grid-template-columns:1fr}.pc-h2{font-size:20px}}
+/* ---- v3: follows the reference style (airy light page, large rounded grey surfaces, big geometric headings, dark pill buttons) ---- */
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
+:root{--bg:#eceef1;--card:#f4f5f7;--surface:#ffffff;--ink:#0d0d0d;--muted:#6b6f76;--line:#e4e6ea;--amber:#9a6412;--amber-bg:#fdf5e6;--red:#b42318;--green:#2f7d5b}
+.stApp{background:var(--bg);color:var(--ink);font-family:'Urbanist',Arial,sans-serif;font-size:16px;line-height:1.5}
+.stApp .block-container{max-width:1240px;padding:40px 48px 80px}
+.stApp h1{font-size:44px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.stApp [data-testid='stTabs'] [data-baseweb='tab-list']{border-bottom:0;gap:28px}
+.stApp [data-testid='stTabs'] button[role='tab']{font-size:17px;font-weight:600;color:var(--muted)}
+.stApp [data-testid='stTabs'] button[role='tab'][aria-selected='true']{color:var(--ink)}
+.stApp [data-testid='stTabs'] [data-baseweb='tab-highlight']{background:var(--ink);height:2px}
+.stApp [data-testid='stWidgetLabel'] p{font-size:15px;font-weight:600;color:var(--ink)}
+.stApp textarea,.stApp input{background:#fff!important;border:0!important;border-radius:16px!important;font-size:17px!important;box-shadow:none!important}
+.stApp [data-testid='stFileUploader']{background:#fff;border-radius:16px;border:0}
+.stApp [data-testid='stFileUploaderDropzone']{background:#fff;border:0;border-radius:16px}
+.stApp [data-testid='stExpander']{background:#fff;border:0;border-radius:16px;box-shadow:none}
+.stApp [data-testid='stBaseButton-primary']{background:var(--ink);border:0;border-radius:999px;min-height:52px;padding:0 28px;font-size:16px;font-weight:600}
+.stApp [data-testid='stBaseButton-primary']:hover{background:#2b2b2b}
+.stApp [data-testid='stButton'] button:not([kind='primary']){background:#fff;border:0;border-radius:999px;min-height:52px;font-weight:600;color:var(--ink)}
+.pc-h2{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.15;margin:12px 0 8px 0;color:var(--ink)}
+.pc-sub{font-size:17px;color:var(--muted);margin:0 0 24px 0}
+.pc-card{background:var(--card);border:0;border-radius:24px;padding:28px;box-shadow:none;overflow:hidden}
+.pc-reco{border:0;border-radius:18px;background:var(--surface);margin:0 0 16px 0;padding:22px 24px}
+.pc-reco.flag{background:var(--amber-bg);color:var(--amber)}
+.pc-reco.clear,.pc-reco.unknown{background:var(--surface);color:var(--ink)}
+.pc-rv{font-size:28px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.pc-rs{font-size:16px;color:var(--ink);margin-top:6px}
+.pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;border:0;margin:0}
+.pc-panel{background:var(--surface);border:0;border-radius:18px;padding:22px 24px}
+.pc-panel + .pc-panel{border-left:0}
+.pc-ph{font-size:20px;font-weight:700;color:var(--ink);border-bottom:0;padding:0 0 12px 0;margin:0}
+.pc-line{border-top:1px solid var(--line);padding:14px 0}
+.pc-ph + .pc-line{border-top:0}
+.pc-k{font-size:14px;font-weight:500;color:var(--muted)}
+.pc-v{font-size:19px;font-weight:600;color:var(--ink)}
+.pc-n{font-size:15px;color:var(--muted)}
+.pc-v.tone-ok{color:var(--green)}
+.pc-v.tone-bad{color:var(--red)}
+.pc-v.tone-neutral{color:var(--muted)}
+.pc-v.pill-high{color:var(--red);font-weight:700;font-size:20px}
+.pc-v.pill-medium{color:var(--amber);font-weight:700;font-size:20px}
+.pc-v.pill-low{color:var(--green);font-weight:700;font-size:20px}
+.pc-comb{background:var(--surface);border:0;border-radius:18px;padding:22px 24px;margin:16px 0 0 0}
+.pc-next{background:var(--ink);color:#fff;border:0;border-radius:18px;padding:20px 24px;margin:16px 0 0 0;font-size:17px;line-height:1.5}
+.pc-note{color:var(--muted);font-size:14px;padding:12px 4px 0 4px;margin:0}
+.pc-empty{background:var(--card);border:0;border-radius:24px;padding:40px;color:var(--muted);text-align:center;font-size:17px}
+.pc-ico{display:none}
+@media(max-width:760px){.stApp .block-container{padding:20px 16px 48px}.pc-grid{grid-template-columns:1fr}.pc-h2{font-size:28px}.pc-rv{font-size:24px}}
 """
