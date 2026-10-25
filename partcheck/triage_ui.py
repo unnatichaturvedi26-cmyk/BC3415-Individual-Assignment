@@ -231,7 +231,7 @@ def _first_phrase(row):
 
 def combine(text_priority, p_neg, image_flags, text_issue="", image_cannot=False, image_name=""):
     """THE COMBINATION RULE.  Text evidence (0 none, 1 medium, 2 high) and picture evidence (0 none, 1 not an auto part, 2 wrong item or defect) -> High / Medium / Low.
-    High: the text alone is high priority, OR text and picture both raise a problem, OR a wrong item / defect in the picture comes with an unhappy review.
+    High: the review alone is high priority, OR the review names a problem and the picture also raises one.
     Medium: any one signal. Low: none.  Returns (level, [reasons])."""
     t = {"HIGH": 2, "MEDIUM": 1}.get(text_priority, 0)
     i = 2 if ("wrong_item" in image_flags or "defect" in image_flags) else (1 if "not_part" in image_flags else 0)
@@ -242,7 +242,7 @@ def combine(text_priority, p_neg, image_flags, text_issue="", image_cannot=False
                    ("not_part", "Picture: not an auto part")):
         if f in image_flags:
             why.append(msg)
-    if t == 2 or (t >= 1 and i >= 1) or (i == 2 and p_neg is not None and p_neg >= 0.5):
+    if t == 2 or (t >= 1 and i >= 1):
         return "High", why
     if t or i:
         return "Medium", why
@@ -357,8 +357,16 @@ def _panel(title, rows, extra="", cls=""):
     def value(v):
         text, tone = v if isinstance(v, tuple) else (v, "")
         return f"<div class='pc-v {tone}'>{esc(text)}</div>"
-    body = "".join((f"<div class='pc-k'>{esc(k)}</div>" if k else "") + value(v) + (f"<div class='pc-n'>{esc(n)}</div>" if n else "") for k, v, n in rows)
+    body = "".join(f"<div class='pc-line'><div class='pc-k'>{esc(k)}</div><div>{value(v)}" + (f"<div class='pc-n'>{esc(n)}</div>" if n else "") + "</div></div>" for k, v, n in rows)
     return f"<div class='pc-panel {cls}'>{extra}<div class='pc-ph'>{esc(title)}</div>{body}</div>"
+
+
+def _sentiment_row(row):
+    """Sentiment line. The model's top class and its negative probability can disagree, so a neutral label that leans negative is called Mixed."""
+    label, note = SENT.get(row["sentiment"], row["sentiment"]), f"{row['p_negative']:.0%} chance the customer is unhappy"
+    if str(row["sentiment"]).lower() == "neutral" and row["p_negative"] >= 0.5:
+        label, note = "Mixed", "Leans negative. " + note
+    return ("Sentiment", label, note)
 
 
 def render_order(res):
@@ -372,7 +380,7 @@ def render_order(res):
     if row is not None:
         names = _issue_names(row)
         poss = _split(row["possible"])
-        rev = _panel("Text signal", [("Sentiment", f"{SENT.get(row['sentiment'], row['sentiment'])}", f"{row['p_negative']:.0%} chance the customer is unhappy"),
+        rev = _panel("Text signal", [_sentiment_row(row),
                                         ("Issue", ", ".join(names) if names else "No specific issue detected",
                                          (f"phrase in the review: “{_first_phrase(row)}”" + ("" if res["text_flag"] else ". This is not escalated, because the review is not negative overall")) if names and _first_phrase(row) else ("unconfirmed model guess: " + ", ".join(LABEL.get(k, k).lower() for k in poss) if poss else "")),
                                         ("Part named", ", ".join(p["name"] for p in (res["ordered_parts"] or parts)[:2]) or "No specific part named",
@@ -410,10 +418,12 @@ def render_order(res):
         pic = _panel("Image signal", rows, thumb)
     # 3. combined decision
     lvl = res["level"]
-    explanation = {"High": "Escalate this order now. The review is strongly negative, or the review and the picture both point to a problem.",
-                   "Medium": "Check this order. One signal points to a problem.",
-                   "Low": "Routine. Neither the review nor the picture shows a problem."}[lvl]
-    comb = _panel("Decision", [("Priority", lvl, explanation)] + [("Evidence" if i == 0 else "", w, "") for i, w in enumerate(res["why"])], cls="pc-comb " + lvl.lower())
+    if lvl == "High":
+        explanation = ("Escalate now. The review is strongly negative." if row is not None and row["priority_text_only"] == "HIGH"
+                       else "Escalate now. The review describes a problem, and the picture supports it.")
+    else:
+        explanation = {"Medium": "Check this order. One signal points to a problem.", "Low": "Routine. Neither the review nor the picture shows a problem."}[lvl]
+    comb = _panel("Decision", [("Priority", (lvl, "pill-" + lvl.lower()), explanation)] + [("Evidence" if i == 0 else "", w, "") for i, w in enumerate(res["why"])], cls="pc-comb " + lvl.lower())
     checked_by_rule = photo is not None and photo["status"] == "part" and res["photo"].get("condition") is None
     footnote = "<div class='pc-note'>Damage checks cover 7 part types only.</div>" if checked_by_rule else ""
     signals = f"<div class='pc-grid'>{rev}{pic}</div>" if (rev or pic) else ""
@@ -638,11 +648,15 @@ CSS += """
 .pc-reco{border-radius:13px;border-left:0;padding:19px;margin-bottom:20px}.pc-ico{border-radius:50%}
 .pc-ph{font-size:17px;font-weight:700;color:#0f1a2b;margin:0 0 10px 0;padding-left:10px;border-left:4px solid #0f1a2b;line-height:1.3}
 .pc-comb.high .pc-ph{border-left-color:#9b2c1d}.pc-comb.medium .pc-ph{border-left-color:#c98a1b}.pc-comb.low .pc-ph{border-left-color:#1f6b52}
-.pc-k{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5b6370;margin-top:14px}
-.pc-v{font-size:18px;font-weight:600;color:#0f1a2b;line-height:1.3;margin-top:2px}
-.pc-n{font-size:14px;color:#5b6370;line-height:1.4;margin-top:2px}
-.pc-comb .pc-v{font-size:24px;font-weight:700}
-.pc-comb.high .pc-v{color:#9b2c1d}.pc-comb.medium .pc-v{color:#8a5a00}.pc-comb.low .pc-v{color:#1f6b52}
+.pc-ph + .pc-line{border-top:0}
+.pc-line{display:grid;grid-template-columns:36% 1fr;gap:12px;padding:10px 0;border-top:1px solid #eceef2;align-items:start}
+.pc-k{font-size:14px;font-weight:500;color:#5b6370;padding-top:2px}
+.pc-v.pill-high{display:inline-block;background:#f6e1dc;color:#7d2317;padding:3px 12px;border-radius:999px;font-size:16px}
+.pc-v.pill-medium{display:inline-block;background:#f8eddb;color:#7a4e06;padding:3px 12px;border-radius:999px;font-size:16px}
+.pc-v.pill-low{display:inline-block;background:#dff1ea;color:#1d5c46;padding:3px 12px;border-radius:999px;font-size:16px}
+.pc-comb.high,.pc-comb.medium,.pc-comb.low{background:#fff}
+.pc-v{font-size:16px;font-weight:600;color:#0f1a2b;line-height:1.35}
+.pc-n{font-size:13px;color:#5b6370;line-height:1.45;margin-top:3px}
 .pc-v.tone-ok{color:#1f6b52}.pc-v.tone-bad{color:#9b2c1d}.pc-v.tone-neutral{color:#4a5260}
 .pc-comb{margin-top:18px}
 .pc-grid{gap:14px}.pc-rv{font-size:26px}.pc-rs{font-size:17px}.pc-next{font-size:16px}.pc-note{font-size:14px;color:#5b6370}
