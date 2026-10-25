@@ -26,7 +26,7 @@ check("'went nuts' is not the part 'Screws, bolts & nuts'", names("I went nuts o
 check("'lightweight' is not a light bulb", names("Nice and lightweight") == [])
 check("a real mention is still found", names("The lug nuts were stripped") == ["Lug nuts / wheel locks"])
 
-photo = {"status": "part", "families": {"interior": 0.97, "wheels": 0.02}, "family": "interior", "shows_name": "floor mats"}
+photo = {"status": "part", "families": {"interior": 0.97, "wheels": 0.02}, "family": "interior", "shows": "floor_mat", "shows_name": "floor mats"}
 two = [{"key": "tires", "name": "Tyres"}, {"key": "floor_mats", "name": "Floor mats"}]
 check("a review naming two parts matches a picture of the SECOND one (it used to look only at the first)", ui.compare(two, photo)["state"] == "match")
 check("a picture that matches none of the named parts is still a mismatch", ui.compare([two[0]], photo)["state"] == "mismatch")

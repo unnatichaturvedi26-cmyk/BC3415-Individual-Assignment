@@ -185,8 +185,10 @@ def compare(parts, photo, source="review"):
         return {"state": "cannot", "note": "Add the product ordered to check whether the image matches it"}
     about = "the order is for" if source == "ordered" else "the review is about"
     shows = ti.FAMILY_NAME.get(photo["family"], photo["shows_name"])
+    if any(photo.get("shows") in ti.PHOTO_FOR_KEYS.get(p["key"], ()) for p in parts):      # the exact picture type is one of the parts the review names
+        return {"state": "match", "note": f"{about} {parts[0]['name'].lower()}, and the picture shows one of the parts it names"}
     covered = []                                        # (part name, probability that the picture shows it); a part no picture family covers is skipped
-    for part in parts:
+    for part in parts[:1]:                              # the main part only: the first one the review names. Side mentions (a pedal, a knob) must not count.
         fams = ti.FAMILIES_FOR_KEYS.get(part["key"])
         if fams:
             covered.append((part["name"].lower(), sum(photo["families"].get(f, 0.0) for f in fams)))
@@ -383,7 +385,7 @@ def render_order(res):
         rev = _panel("Text signal", [_sentiment_row(row),
                                         ("Issue", ", ".join(names) if names else "No specific issue detected",
                                          (f"phrase in the review: “{_first_phrase(row)}”" + ("" if res["text_flag"] else ". This is not escalated, because the review is not negative overall")) if names and _first_phrase(row) else ("unconfirmed model guess: " + ", ".join(LABEL.get(k, k).lower() for k in poss) if poss else "")),
-                                        ("Part named", ", ".join(p["name"] for p in (res["ordered_parts"] or parts)[:2]) or "No specific part named",
+                                        ("Part named", ", ".join(p["name"] for p in (res["ordered_parts"] or parts)[:1]) or "No specific part named",
                                          "from the product ordered" if res["ordered_parts"] else "")] + vehicle_rows(res["text"]))
     else:
         rev = ""
