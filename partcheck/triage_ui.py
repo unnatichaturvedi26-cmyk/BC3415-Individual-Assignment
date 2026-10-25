@@ -618,7 +618,13 @@ CSS += """
 .pc-card{padding:23px}.pc-panel{padding:18px}.pc-kpi{padding:22px}.pc-kpi .n{font-size:32px;letter-spacing:-.045em}
 .pc-h2{font-size:27px;font-weight:650;letter-spacing:-.045em;margin:11px 0 8px}.pc-sub{font-size:15px;color:#77777b}
 .pc-reco{border-radius:13px;border-left:0;padding:19px;margin-bottom:20px}.pc-ico{border-radius:50%}
-.pc-ph{font-size:16px;font-weight:700;letter-spacing:.01em;color:#2b3440}.pc-k{font-size:15px;color:#4a5260}.pc-v{font-size:20px;font-weight:650;color:#0f1a2b;line-height:1.25}.pc-n{font-size:15px;color:#4a5260;line-height:1.4}.pc-grid{gap:14px}.pc-rv{font-size:26px}.pc-rs{font-size:17px}.pc-next{font-size:17px}.pc-note{font-size:14px;color:#4a5260}
+.pc-ph{font-size:18px;font-weight:700;color:#0f1a2b;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid #e6e6ea}
+.pc-k{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5b6370;margin-top:14px}
+.pc-v{font-size:18px;font-weight:600;color:#0f1a2b;line-height:1.3;margin-top:2px}
+.pc-n{font-size:14px;color:#5b6370;line-height:1.4;margin-top:2px}
+.pc-comb .pc-v{font-size:24px;font-weight:700}
+.pc-comb.high .pc-v{color:#9b2c1d}.pc-comb.medium .pc-v{color:#8a5a00}.pc-comb.low .pc-v{color:#1f6b52}
+.pc-grid{gap:14px}.pc-rv{font-size:26px}.pc-rs{font-size:17px}.pc-next{font-size:16px}.pc-note{font-size:14px;color:#5b6370}
 .pc-banner{border-radius:11px;padding:13px 17px}.pc-row{margin:10px 0}.pc-row summary{padding:16px}
 .pill,.chip{border-radius:8px}.pc-next{margin-top:18px;padding-top:18px}
 [data-testid='stFileUploader'] section{border-radius:13px;background:#fff;border-color:#dedee2}
