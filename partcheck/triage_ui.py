@@ -11,6 +11,7 @@ Screen 2, SENTIMENT DASHBOARD.  Many reviews -> how customers feel (split, trend
 """
 import io
 import os
+import re
 import json
 import html
 import base64
@@ -205,6 +206,14 @@ IMAGE_FLAG = {"wrong_item": "Picture does not match", "defect": "Possible defect
 ISSUE_SENTENCE = {"damaged_defective": "The review reports damage or a defect", "wrong_item": "The review says the wrong item arrived",
                   "not_as_described": "The review says the item is not as described", "size_fit": "The review reports a fit or size problem",
                   "delivery_shipping": "The review reports a delivery problem", "customer_service": "The review reports a customer service problem"}
+# Vehicles that are not cars: a review naming one may be about a different product, so the agent is asked to check it.
+NON_CAR_RE = re.compile(r"\b(?:utvs?|atvs?|side[- ]by[- ]sides?|lawn (?:tractors?|mowers?)|riding mowers?|tractors?|golf carts?|snowmobiles?|jet skis?)\b", re.I)
+
+
+def vehicle_rows(text):
+    if NON_CAR_RE.search(text or ""):
+        return [("Check", "Non-car vehicle named", "The review names a vehicle that is not a car. Check that it refers to this product.")]
+    return []
 
 
 def _issue_names(row):
@@ -220,7 +229,7 @@ def _first_phrase(row):
     return "" if ev in ("-", "") else ev.split("; ")[0].split(": ", 1)[-1].split("/")[0]
 
 
-def combine(text_priority, p_neg, image_flags, text_issue="", image_cannot=False):
+def combine(text_priority, p_neg, image_flags, text_issue="", image_cannot=False, image_name=""):
     """THE COMBINATION RULE.  Text evidence (0 none, 1 medium, 2 high) and picture evidence (0 none, 1 not an auto part, 2 wrong item or defect) -> High / Medium / Low.
     High: the text alone is high priority, OR text and picture both raise a problem, OR a wrong item / defect in the picture comes with an unhappy review.
     Medium: any one signal. Low: none.  Returns (level, [reasons])."""
@@ -238,7 +247,7 @@ def combine(text_priority, p_neg, image_flags, text_issue="", image_cannot=False
     if t or i:
         return "Medium", why
     if image_cannot:
-        return "Low", ["Review: no problem found", "Picture: part found, but its condition and match were not verified"]
+        return "Low", ["Review: no problem found", f"Picture: {image_name.lower() or 'part'}, not checked against an order"]
     return "Low", why or ["Review and picture show no problem"]
 
 
@@ -275,7 +284,7 @@ def assess_order(text, image, mdl, ordered=""):
         image_flag = "cannot"
     names = _issue_names(row)
     issue = ", ".join(n.lower() for n in names) if names else ""
-    level, why = combine(row["priority_text_only"] if row is not None else "", float(row["p_negative"]) if row is not None else None, flags, issue, image_cannot=(image_flag in ("cannot", "identified")))
+    level, why = combine(row["priority_text_only"] if row is not None else "", float(row["p_negative"]) if row is not None else None, flags, issue, image_cannot=(image_flag in ("cannot", "identified")), image_name=(photo or {}).get("shows_name", ""))
     return {"text": text, "ordered": ordered, "image": image, "photo": photo, "row": row, "parts": parts, "ordered_parts": ordered_parts, "match": match, "reco": reco,
             "text_flag": text_flag, "not_part": not_part, "mismatch": mismatch, "damaged": damaged, "image_flag": image_flag, "level": level, "why": why}
 
@@ -301,7 +310,9 @@ def headline(res):
         return " ".join(b + "." for b in bits)
     if reco == "clear":
         if res.get("image_flag") in ("cannot", "identified"):
-            return "No issue found in the review. The picture was recognised, but its condition was not verified."
+            if res.get("ordered_parts"):
+                return "No problem found in the review. The picture could not be matched to the order."
+            return "No problem found in the review. The picture was not checked against an order."
         return "Nothing in the review or the picture points to a problem."
     if res["photo"] is not None and not res["text"]:
         p = res["photo"]
@@ -314,6 +325,8 @@ def headline(res):
 def next_action(res):
     row = res["row"]
     if res["reco"] == "clear":
+        if res.get("image_flag") in ("cannot", "identified") and not res.get("ordered_parts"):
+            return "No action needed for the review. Enter the ordered product to check the picture."
         return "No action needed."
     if res["reco"] == "unknown":
         return "Ask the customer for a clear photo of the part, or look at it by hand."
@@ -363,7 +376,7 @@ def render_order(res):
                                         ("Issue", ", ".join(names) if names else "No specific issue detected",
                                          (f"phrase in the review: “{_first_phrase(row)}”" + ("" if res["text_flag"] else ". This is not escalated, because the review is not negative overall")) if names and _first_phrase(row) else ("unconfirmed model guess: " + ", ".join(LABEL.get(k, k).lower() for k in poss) if poss else "")),
                                         ("Part named", ", ".join(p["name"] for p in (res["ordered_parts"] or parts)[:2]) or "No specific part named",
-                                         "from the product ordered" if res["ordered_parts"] else "")])
+                                         "from the product ordered" if res["ordered_parts"] else "")] + vehicle_rows(res["text"]))
     else:
         rev = ""
     # 2. image signal (its own flag)
@@ -390,7 +403,7 @@ def render_order(res):
                 rows.append(("Condition", {"possible defect": "Possible defect", "no defect found": "No defect found"}.get(cond, "Not assessed"), ""))
         if match is not None and st in ("part", "unclear", "package"):
             state = {"match": "Match", "mismatch": "Do not match", "cannot": "Needs product reference"}[match["state"]]
-            tone = {"match": "tone-ok", "mismatch": "tone-bad", "cannot": "tone-warn"}[match["state"]]
+            tone = {"match": "tone-ok", "mismatch": "tone-bad", "cannot": "tone-neutral"}[match["state"]]
             rows.append(("Order vs picture" if res.get("ordered_parts") else "Review vs picture", (state, tone), match["note"]))
         if res["image_flag"] == "defect" and photo.get("condition") != "possible defect":
             rows[0] = ("Image flag", IMAGE_FLAG["defect"], "unvalidated cue: the picture resembles damaged parts or packaging")
@@ -619,17 +632,18 @@ CSS += """
 .stApp [data-testid='stBaseButton-primary']:hover{background:#424245;border-color:#424245}
 .stApp [data-testid='stButton'] button:not([kind='primary']),.stApp [data-testid='stDownloadButton'] button{border-radius:11px;min-height:43px;border:1px solid #dadade}
 .stApp input,.stApp textarea,.stApp [data-baseweb='select']>div{border-radius:11px!important}
-.pc-card,.pc-panel,.pc-kpi,.pc-row,.pc-empty{background:white;border:1px solid #e9e9eb;border-radius:17px;box-shadow:0 1px 2px rgba(0,0,0,.025)}
+.pc-card,.pc-panel,.pc-kpi,.pc-row,.pc-empty{background:white;border:1px solid #e9e9eb;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.025)}
 .pc-card{padding:23px}.pc-panel{padding:18px}.pc-kpi{padding:22px}.pc-kpi .n{font-size:32px;letter-spacing:-.045em}
 .pc-h2{font-size:27px;font-weight:650;letter-spacing:-.045em;margin:11px 0 8px}.pc-sub{font-size:15px;color:#77777b}
 .pc-reco{border-radius:13px;border-left:0;padding:19px;margin-bottom:20px}.pc-ico{border-radius:50%}
-.pc-ph{font-size:18px;font-weight:700;color:#0f1a2b;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid #e6e6ea}
+.pc-ph{font-size:17px;font-weight:700;color:#0f1a2b;margin:0 0 10px 0;padding-left:10px;border-left:4px solid #0f1a2b;line-height:1.3}
+.pc-comb.high .pc-ph{border-left-color:#9b2c1d}.pc-comb.medium .pc-ph{border-left-color:#c98a1b}.pc-comb.low .pc-ph{border-left-color:#1f6b52}
 .pc-k{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5b6370;margin-top:14px}
 .pc-v{font-size:18px;font-weight:600;color:#0f1a2b;line-height:1.3;margin-top:2px}
 .pc-n{font-size:14px;color:#5b6370;line-height:1.4;margin-top:2px}
 .pc-comb .pc-v{font-size:24px;font-weight:700}
 .pc-comb.high .pc-v{color:#9b2c1d}.pc-comb.medium .pc-v{color:#8a5a00}.pc-comb.low .pc-v{color:#1f6b52}
-.pc-v.tone-ok{color:#1f6b52}.pc-v.tone-bad{color:#9b2c1d}.pc-v.tone-warn{color:#8a5a00}
+.pc-v.tone-ok{color:#1f6b52}.pc-v.tone-bad{color:#9b2c1d}.pc-v.tone-neutral{color:#4a5260}
 .pc-comb{margin-top:18px}
 .pc-grid{gap:14px}.pc-rv{font-size:26px}.pc-rs{font-size:17px}.pc-next{font-size:16px}.pc-note{font-size:14px;color:#5b6370}
 .pc-banner{border-radius:11px;padding:13px 17px}.pc-row{margin:10px 0}.pc-row summary{padding:16px}
