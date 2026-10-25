@@ -148,7 +148,7 @@ def clear_order():
 tab_order, tab_dash = st.tabs(["Order assessment", "Sentiment dashboard"])
 
 with tab_order:
-    left, right = st.columns([9, 11], gap="large")
+    left, right = st.columns([2, 3], gap="large")
     with left:
         md("<div class='pc-h2'>Customer review and picture</div><p class='pc-sub'>Add a review, a picture, or both.</p>")
         st.text_area("Customer review", key="review", height=120, placeholder="Paste or type the review")
@@ -166,7 +166,7 @@ with tab_order:
         if picture_error:
             st.error(picture_error)
         if picture is not None:
-            st.image(picture, width=180, caption="Picture that will be checked")
+            st.image(picture, width=210, caption="Picture that will be checked")
         if st.session_state.ex_note:
             st.warning(st.session_state.ex_note)
         b1, b2 = st.columns([3, 1])
