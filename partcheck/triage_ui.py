@@ -201,7 +201,7 @@ def compare(parts, photo, source="review"):
 
 # ---------------------------------------------------------------- screen 1: one order
 RECO = {"flag": ("Review recommended", "!"), "clear": ("No issue detected", "✓"), "unknown": ("Unable to assess", "?")}
-IMAGE_FLAG = {"wrong_item": "Wrong item", "defect": "Possible defect", "not_part": "Not an auto part", "ok": "No problem found", "cannot": "Visual check incomplete", "identified": "Part identified"}
+IMAGE_FLAG = {"wrong_item": "Picture does not match", "defect": "Possible defect", "not_part": "Not an auto part", "ok": "No problem found", "cannot": "Visual check incomplete", "identified": "Part identified"}
 
 
 def _issue_names(row):
@@ -366,7 +366,7 @@ def render_order(res):
     if photo is None:
         pic = _panel("2. Image signal", [("", "No picture added", "")])
     else:
-        rows = [("Visual assessment", IMAGE_FLAG[res["image_flag"]], "Recognition and damage verification are separate checks.")]
+        rows = [("Image flag", IMAGE_FLAG[res["image_flag"]], "")]
         st = photo["status"]
         if st == "unavailable":
             rows = [("", "Unable to assess", "the picture model is not loaded")]
@@ -381,15 +381,15 @@ def render_order(res):
         else:
             cond = photo["condition"]
             rows.append(("Shows", photo["shows_name"].capitalize(), "an auto part"))
-            rows.append(("Condition", {"possible defect": "Possible defect", "no defect found": "No defect found"}.get(cond, "Not assessed — unverified"),
-                         "" if cond else "Damage detection was not validated for this image; this is not a failure to recognise the part"))
+            rows.append(("Condition", {"possible defect": "Possible defect", "no defect found": "No defect found"}.get(cond, "Not assessed"),
+                         "" if cond else "the damage check covers only 7 factory-style part types"))
         if match is not None and st in ("part", "unclear", "package"):
             state = {"match": "Match", "mismatch": "Do not match", "cannot": "Needs product reference"}[match["state"]]
             rows.append(("Order vs picture" if res.get("ordered_parts") else "Review vs picture", state, match["note"]))
         elif match is None and st == "part" and not res.get("ordered_parts") and row is None:
             rows.append(("Review vs picture", "Not compared", "add a review or the product ordered to compare"))
         if res["image_flag"] == "defect" and photo.get("condition") != "possible defect":
-            rows[0] = ("Visual assessment", IMAGE_FLAG["defect"], "unvalidated cue: the picture resembles damaged parts or packaging")
+            rows[0] = ("Image flag", IMAGE_FLAG["defect"], "unvalidated cue: the picture resembles damaged parts or packaging")
         pic = _panel("2. Image signal", rows, thumb)
     # 3. combined decision
     lvl = res["level"]
