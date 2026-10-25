@@ -23,7 +23,7 @@ import triage_ui as ui
 
 log = logging.getLogger("partcheck")
 
-st.set_page_config(page_title="PartCheck | Review intelligence", page_icon="🔎", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="PartCheck | Review intelligence", layout="wide", initial_sidebar_state="collapsed")
 st.markdown("<style>" + ui.CSS + "</style>", unsafe_allow_html=True)
 
 
