@@ -148,9 +148,9 @@ def clear_order():
 tab_order, tab_dash = st.tabs(["Order assessment", "Sentiment dashboard"])
 
 with tab_order:
-    left, right = st.columns(2, gap="large")
+    left, right = st.columns([2, 3], gap="large")
     with left:
-        md("<div class='pc-h2'>Customer review and picture</div><p class='pc-sub'>Add a review, a picture, or both. The product ordered is optional.</p>")
+        md("<div class='pc-h2'>Customer review and picture</div><p class='pc-sub'>Add a review, a picture, or both.</p>")
         st.text_area("Customer review", key="review", height=120, placeholder="Paste or type the review")
         upload = st.file_uploader("Customer picture (optional)", type=["jpg", "jpeg", "png", "webp"], key=f"upload_{st.session_state.up_n}")
         st.text_input("Product ordered (optional)", key="ordered", placeholder="For example: Bosch wiper blades 24 inch")
@@ -172,14 +172,13 @@ with tab_order:
         b1, b2 = st.columns([3, 1])
         go = b1.button("Analyse order", type="primary", key="go_order")
         b2.button("Clear", key="clear_order", on_click=clear_order)
-        with st.container(border=True):
-            st.markdown("**Explore with sample orders**")
-            st.caption("Select a scenario, then load it into the form above. Nothing is analysed until you click Analyse order.")
+        with st.expander("Try a sample order"):
+            st.caption("Choose a scenario, then load it into the form. Nothing is analysed until you click Analyse order.")
             example_col, load_col = st.columns([3, 1], vertical_alignment="bottom")
             selected = example_col.selectbox("Example scenario", range(len(EXAMPLES)), format_func=lambda i: EXAMPLES[i][0], key="example_choice", label_visibility="collapsed")
             load_col.button("Load example", key="load_example", on_click=load_example, args=(selected,), use_container_width=True)
     with right:
-        md("<div class='pc-h2'>Assessment</div><p class='pc-sub'>Review signals and visual checks are assessed independently, then combined into a suggested priority.</p>")
+        md("<div class='pc-h2'>Assessment</div><p class='pc-sub'>Each signal is checked on its own, then combined into one priority.</p>")
         slot = st.empty()
         if go:
             if picture_error:
