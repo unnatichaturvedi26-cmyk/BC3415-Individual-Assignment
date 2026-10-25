@@ -136,7 +136,7 @@ def load_example(i):
         if path:
             st.session_state.ex_pic = path
         else:
-            st.session_state.ex_note = "The example picture could not be downloaded (no internet?). Only the text was filled in; upload your own picture to try the picture checks."
+            st.session_state.ex_note = "The example picture could not be downloaded, possibly because there is no internet connection. Only the text was filled in. Upload your own picture to try the picture checks."
 
 
 def clear_order():
@@ -205,7 +205,7 @@ with tab_order:
                            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
                            "<title>PartCheck order assessment</title><style>" + ui.CSS +
                            "body{max-width:950px;margin:35px auto;padding:20px;font-family:Arial,sans-serif}</style></head>"
-                           "<body><h1>PartCheck — Order assessment</h1><p>Generated " +
+                           "<body><h1>PartCheck: order assessment</h1><p>Generated " +
                            html.escape(datetime.now().strftime('%d %B %Y')) + "</p>" + report_body + "</body></html>")
             st.download_button("Download assessment (HTML)", report_html.encode('utf-8'),
                                file_name='partcheck_order_assessment.html', mime='text/html',

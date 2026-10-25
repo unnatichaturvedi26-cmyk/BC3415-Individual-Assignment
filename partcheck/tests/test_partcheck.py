@@ -201,7 +201,7 @@ r = ui.assess_order("Great, love it.", solid(GREEN), M)
 check("random picture: the image flag is 'Not an auto part' and the priority is at least Medium", r["image_flag"] == "not_part" and r["level"] in ("Medium", "High"))
 r = ui.assess_order("The oil leaked, terrible, disappointed.", solid(RED), M); h = ui.render_order(r)
 check("negative review plus a picture of a different part: image flag Wrong item, combined priority High, reasons listed",
-      r["image_flag"] == "wrong_item" and r["level"] == "High" and len(r["why"]) == 2 and "3. Combined decision" in h and "2. Image signal" in h and "1. Text signal" in h)
+      r["image_flag"] == "wrong_item" and r["level"] == "High" and len(r["why"]) == 2 and "Decision" in h and "Image signal" in h and "Text signal" in h)
 r = ui.assess_order("Great, thank you, love the motor oil.", solid(RED), M)
 check("happy review plus wrong-part picture: Medium, not High", r["image_flag"] == "wrong_item" and r["level"] == "Medium")
 r = ui.assess_order("Works great.", solid(RED), M, ordered="Valvoline synthetic motor oil 5 quart")

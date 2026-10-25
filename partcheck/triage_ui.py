@@ -95,7 +95,7 @@ CSS = """
 .pill.HIGH{background:#fff0ed;color:var(--red)}.pill.MEDIUM{background:#fff6e6;color:#8e662b}.pill.LOW{background:#eff2f4;color:#52606e}
 .chip{display:inline-block;padding:1px 8px;margin:1px 3px 1px 0;border-radius:4px;border:1px solid #d1e0e8;background:#f2f7f9;color:#31566b;font-size:12px;font-weight:600}
 .chip.part{border-color:#d1e0e8;background:#f3f7f9}.chip.neg{border-color:#e8c8c2;background:#fff1ef;color:#8c3836}.chip.neu{border-color:#dde2e5;background:#f3f5f6;color:#586574}.chip.pos{border-color:#c8dfd5;background:#eff7f3;color:#245d4b}
-@media(max-width:760px){.pc-grid{grid-template-columns:1fr 1fr}.pc-hero h1{font-size:30px}}
+@media(max-width:760px){.pc-grid{grid-template-columns:1fr}.pc-hero h1{font-size:30px}}
 @media(max-width:500px){.pc-grid{grid-template-columns:1fr}}
 """
 
@@ -193,15 +193,15 @@ def compare(parts, photo, source="review"):
         return {"state": "cannot", "note": f"no picture family covers {parts[0]['name'].lower()}"}
     best_name, best_p = max(covered, key=lambda x: x[1])
     if best_p >= T_MATCH:                               # the picture matches ANY part the review names
-        return {"state": "match", "note": f"{about} {best_name}; the picture looks like {shows}"}
+        return {"state": "match", "note": f"{about[0].upper()}{about[1:]} {best_name}. The picture looks like {shows}."}
     if best_p < T_MISMATCH:                             # ... and it is a mismatch only when it matches NONE of them
-        return {"state": "mismatch", "note": f"{about} {covered[0][0]}, but the picture looks like {shows}"}
-    return {"state": "cannot", "note": "the picture does not clearly show that part or a different one"}
+        return {"state": "mismatch", "note": f"{about[0].upper()}{about[1:]} {covered[0][0]}. The picture looks like {shows}."}
+    return {"state": "cannot", "note": "The picture does not clearly show that part or a different one."}
 
 
 # ---------------------------------------------------------------- screen 1: one order
 RECO = {"flag": ("Review recommended", "!"), "clear": ("No issue detected", "✓"), "unknown": ("Unable to assess", "?")}
-IMAGE_FLAG = {"wrong_item": "Picture does not match", "defect": "Possible defect", "not_part": "Not an auto part", "ok": "No problem found", "cannot": "Visual check incomplete", "identified": "Part identified"}
+IMAGE_FLAG = {"wrong_item": "Picture does not match", "defect": "Possible defect", "not_part": "Not an auto part", "ok": "No problem found", "cannot": "Could not decide", "identified": "Part found, condition not checked"}
 
 
 def _issue_names(row):
@@ -297,7 +297,7 @@ def headline(res):
     if res["damaged"]:
         bits.append("Possible defect in the picture" + (f" ({res['photo']['shows_name']})" if res["photo"]["status"] == "part" else ""))
     if bits:
-        return "; ".join(bits)
+        return " ".join(b + "." for b in bits)
     if reco == "clear":
         if res.get("image_flag") in ("cannot", "identified"):
             return "No issue found in the review. The picture was recognised, but its condition was not verified."
@@ -305,8 +305,8 @@ def headline(res):
     if res["photo"] is not None and not res["text"]:
         p = res["photo"]
         return {"vehicle": "The picture shows a whole vehicle, not a part.", "unavailable": "The picture model is not available.",
-                "unclear": "No auto part can be clearly identified in the picture.", "package": "The picture shows a package; the part itself is not visible."}.get(
-            p["status"], f"The picture shows {p.get('shows_name', 'a part')}; its condition cannot be assessed.")
+                "unclear": "No auto part can be clearly identified in the picture.", "package": "The picture shows a package. The part itself is not visible."}.get(
+            p["status"], f"The picture shows {p.get('shows_name', 'a part')}. Its condition cannot be assessed.")
     return "Not enough to assess."
 
 
@@ -320,9 +320,9 @@ def next_action(res):
     if res["text_flag"] and row is not None:
         conf = _split(row["confirmed"])
         if "size_fit" in conf:
-            acts.append("Check the part number against the vehicle's fitment data; offer an exchange for the right part (a photo cannot confirm fitment).")
+            acts.append("Check the part number against the vehicle's fitment data. Offer an exchange for the right part. A photo cannot confirm fitment.")
         elif "damaged_defective" in conf and "delivery_shipping" in conf:
-            acts.append("Offer a replacement or refund; review the packaging and the carrier (the part may have been damaged in transit).")
+            acts.append("Offer a replacement or refund. Review the packaging and the carrier, because the part may have been damaged in transit.")
         else:
             first = str(row["suggested_action"]).split(" | ")[0]
             acts.append(first[len("Photo: "):] if first.startswith("Photo: ") else first)
@@ -330,7 +330,7 @@ def next_action(res):
         acts.append("Ask the customer to send a photo of the part.")
     if res["mismatch"]:
         if res.get("ordered_parts"):
-            acts.append("Check what was picked and shipped against the order; if the wrong part went out, send the right one and arrange the return")
+            acts.append("Check what was picked and shipped against the order. If the wrong part went out, send the right one and arrange the return.")
         else:
             acts.append("Ask the customer which part the picture shows: it may belong to another order.")
     if res["damaged"] and not res["text_flag"]:
@@ -355,16 +355,16 @@ def render_order(res):
     if row is not None:
         names = _issue_names(row)
         poss = _split(row["possible"])
-        rev = _panel("1. Text signal", [("Sentiment", f"{SENT.get(row['sentiment'], row['sentiment'])}", f"{row['p_negative']:.0%} chance the customer is unhappy"),
+        rev = _panel("Text signal", [("Sentiment", f"{SENT.get(row['sentiment'], row['sentiment'])}", f"{row['p_negative']:.0%} chance the customer is unhappy"),
                                         ("Issue", ", ".join(names) if names else "No specific issue detected",
                                          (f"phrase in the review: “{_first_phrase(row)}”" + ("" if res["text_flag"] else ". Not escalated: the review is not negative overall")) if names and _first_phrase(row) else ("unconfirmed model guess: " + ", ".join(LABEL.get(k, k).lower() for k in poss) if poss else "")),
                                         ("Part named", ", ".join(p["name"] for p in parts[:2]) if parts else "No specific part named", "")])
     else:
-        rev = _panel("1. Text signal", [("", "No review added", "")])
+        rev = ""
     # 2. image signal (its own flag)
     thumb = f"<img class='pc-thumb' src='data:image/jpeg;base64,{thumb_b64(res['image'])}' alt='picture'/>" if res["image"] is not None else ""
     if photo is None:
-        pic = _panel("2. Image signal", [("", "No picture added", "")])
+        pic = ""
     else:
         rows = [("Image flag", IMAGE_FLAG[res["image_flag"]], "")]
         st = photo["status"]
@@ -381,24 +381,24 @@ def render_order(res):
         else:
             cond = photo["condition"]
             rows.append(("Shows", photo["shows_name"].capitalize(), "an auto part"))
-            rows.append(("Condition", {"possible defect": "Possible defect", "no defect found": "No defect found"}.get(cond, "Not assessed"),
-                         "" if cond else "the damage check covers only 7 factory-style part types"))
+            rows.append(("Condition", {"possible defect": "Possible defect", "no defect found": "No defect found"}.get(cond, "Not assessed"), ""))
         if match is not None and st in ("part", "unclear", "package"):
             state = {"match": "Match", "mismatch": "Do not match", "cannot": "Needs product reference"}[match["state"]]
             rows.append(("Order vs picture" if res.get("ordered_parts") else "Review vs picture", state, match["note"]))
-        elif match is None and st == "part" and not res.get("ordered_parts") and row is None:
-            rows.append(("Review vs picture", "Not compared", "add a review or the product ordered to compare"))
         if res["image_flag"] == "defect" and photo.get("condition") != "possible defect":
             rows[0] = ("Image flag", IMAGE_FLAG["defect"], "unvalidated cue: the picture resembles damaged parts or packaging")
-        pic = _panel("2. Image signal", rows, thumb)
+        pic = _panel("Image signal", rows, thumb)
     # 3. combined decision
     lvl = res["level"]
     explanation = {"High": "Escalate: strong text evidence or multiple independent warning signals.",
                    "Medium": "Review: at least one text or picture signal warrants attention.",
-                   "Low": "Routine: no confirmed warning signal; unverified image checks are not proof of good condition."}[lvl]
-    comb = _panel("3. Combined decision", [("Priority", lvl, explanation)] + [("Evidence" if i == 0 else "", w, "") for i, w in enumerate(res["why"])], cls="pc-comb " + lvl.lower())
-    return (f"<div class='pc-card'>{head}<div class='pc-grid'>{rev}{pic}{comb}</div>"
-            f"<div class='pc-next'><b>Next action:</b> {esc(next_action(res))}</div>"
+                   "Low": "Routine. No confirmed warning signal was found. Unverified image checks do not prove that the item is in good condition."}[lvl]
+    comb = _panel("Decision", [("Priority", lvl, explanation)] + [("Evidence" if i == 0 else "", w, "") for i, w in enumerate(res["why"])], cls="pc-comb " + lvl.lower())
+    checked_by_rule = photo is not None and photo["status"] == "part" and res["photo"].get("condition") is None
+    footnote = "<div class='pc-note'>Damage checks cover 7 part types only.</div>" if checked_by_rule else ""
+    signals = f"<div class='pc-grid'>{rev}{pic}</div>" if (rev or pic) else ""
+    return (f"<div class='pc-card'>{head}{comb}{signals}"
+            f"<div class='pc-next'><b>Next action:</b> {esc(next_action(res))}</div>{footnote}"
             f"<div class='pc-note'>A person decides what happens next. This app does not send messages or issue refunds.</div></div>")
 
 
